@@ -89,12 +89,33 @@ def double(x: int) -> int:
     return z
 
 
+Loop1 = Function("Loop1", IntSort(), IntSort(), IntSort(), BoolSort())
+Double = Function("Double", IntSort(), IntSort(), BoolSort())
+
 def task_1_chc():
-    return []
+    x, i, z, res = Ints("x i z res")
+    return [
+        ForAll([x], Loop1(x, 0, 0)),
+
+        ForAll([x, i, z], Implies(
+            And(Loop1(x, i, z), i < x),
+            Loop1(x, i + 1, z + 2)
+        )),
+
+        ForAll([x, i, z], Implies(
+            And(Loop1(x, i, z), Not(i < x)),
+            Double(x, z)
+        )),
+
+        ForAll([x, res], Implies(
+            And(Double(x, res), x >= 0, res != 2 * x),
+            False
+        ))
+    ]
 
 
 def task_1_check(model, x: int, res: int) -> Optional[bool]:
-    return None
+    return evaluate(model.eval(Double(IntVal(x), IntVal(res))))
 
 
 ##################################################
@@ -110,12 +131,32 @@ def ack(m: int, n: int) -> int:
         return ack(m - 1, ack(m, n - 1))
 
 
+Ack = Function("Ack", IntSort(), IntSort(), IntSort(), BoolSort())
+
 def task_2_chc():
-    return []
+    m, n, t, res = Ints("m n t res")
+    return [
+        ForAll([n], Ack(0, n, n + 1)),
+
+        ForAll([m, res], Implies(
+            And(m != 0, Ack(m - 1, 1, res)),
+            Ack(m, 0, res)
+        )),
+
+        ForAll([m, n, t, res], Implies(
+            And(m != 0, n != 0, Ack(m, n - 1, t), Ack(m - 1, t, res)),
+            Ack(m, n, res)
+        )),
+
+        ForAll([m, n, res], Implies(
+            And(Ack(m, n, res), m >= 0, n >= 0, res < n),
+            False
+        ))
+    ]
 
 
 def task_2_check(model, m: int, n: int, res: int) -> Optional[bool]:
-    return None
+    return evaluate(model.eval(Ack(IntVal(m), IntVal(n), IntVal(res))))
 
 
 ##################################################
@@ -131,13 +172,48 @@ def search_in_array(array: List[int], value: int) -> int:
             return i
     return -1
 
+IntArr = ArraySort(IntSort(), IntSort())
+Loop3 = Function("Loop3", IntArr, IntSort(), IntSort(), IntSort(), BoolSort())
+Search = Function("Search", IntArr, IntSort(), IntSort(), IntSort(), BoolSort())
 
 def task_3_chc():
-    return []
+    array = Array("array", IntSort(), IntSort())
+    l, v, i, res = Ints("l v i res")
+    return [
+        ForAll([array, l, v], Loop3(array, l, v, 0)),
+
+        ForAll([array, l, v, i], Implies(
+            And(Loop3(array, l, v, i), i < l, Select(array, i) != v),
+            Loop3(array, l, v, i + 1)
+        )),
+
+        ForAll([array, l, v, i], Implies(
+            And(Loop3(array, l, v, i), i < l, Select(array, i) == v),
+            Search(array, l, v, i)
+        )),
+
+        ForAll([array, l, v, i], Implies(
+            And(Loop3(array, l, v, i), Not(i < l)),
+            Search(array, l, v, -1)
+        )),
+
+        ForAll([array, l, v, res], Implies(
+            And(Search(array, l, v, res), Not(Or(
+                res == -1,
+                And(0 <= res, res < l, Select(array, res) == v)
+            ))),
+            False
+        ))
+    ]
 
 
 def task_3_check(model, array: List[int], value: int, res: int) -> Optional[bool]:
-    return None
+    array_val = K(IntSort(), IntVal(0))
+
+    for index, element in enumerate(array):
+        array_val = Store(array_val, IntVal(index), IntVal(element))
+
+    return evaluate(model.eval(Search(array_val, IntVal(len(array)), IntVal(value), IntVal(res))))
 
 
 ##################################################
@@ -166,13 +242,35 @@ def recursive_simple(a: int, b: int) -> int:
     return res
 
 
+Exception1 = Function("Ex", IntSort(), IntSort(), BoolSort())
+
 def task_4_chc():
-    return []
+    a, b = Ints("a b")
+    return [
+        ForAll([a, b], Implies(a < 0, Exception1(a, b))),
+
+        ForAll([a, b], Implies(b < 0, Exception1(a, b))),
+
+        ForAll([a, b], Implies(
+            And(a >= 0, b >= 0, a < b, a < 17),
+            Exception1(a, b)
+        )),
+
+        ForAll([a, b], Implies(
+            And(a >= 0, b >= 0, a > b, Exception1(a - 1, b)),
+            Exception1(a, b)
+        )),
+
+        ForAll([a, b], Implies(
+            And(a >= 0, b >= 0, a == b, Exception1(a - 1, b - 2)),
+            Exception1(a, b)
+        ))
+    ]
 
 
 def task_4_check(model, a: int, b: int) -> Optional[bool]:
     """Значение слабейшего предусловия на (a, b): True — исключения не будет."""
-    return None
+    return not evaluate(model.eval(Exception1(IntVal(a), IntVal(b))))
 
 
 ##################################################
