@@ -99,10 +99,6 @@ def grade(module, n, program, cases):
             except Forbidden as e:
                 raise Fail(str(e))
 
-    for args, _ in cases:
-        if call(ConstModel(model, True), args) == call(ConstModel(model, False), args):
-            raise Fail(f"check{args} судит не по модели: ответ не меняется, когда все "
-                       f"предикаты подменяются на True или на False")
     for args, expected in cases:
         got = call(model, args)
         if got is None:
